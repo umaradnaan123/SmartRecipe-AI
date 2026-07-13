@@ -1,6 +1,8 @@
 import { MetadataRoute } from 'next';
 import prisma from '@/lib/db';
 
+export const dynamic = 'force-dynamic';
+
 interface RecipeSelectResult {
   slug: string;
   createdAt: Date;
