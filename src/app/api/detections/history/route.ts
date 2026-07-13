@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
     const items = history.map((item) => ({
       id: item.id,
       detected_object: item.detectedObject,
-      image_url: `/uploads/${item.imagePath}`,
+      image_url: item.imagePath.startsWith('data:') ? item.imagePath : `/uploads/${item.imagePath}`,
       created_at: item.createdAt,
     }));
 

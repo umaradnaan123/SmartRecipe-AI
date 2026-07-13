@@ -36,7 +36,7 @@ export async function GET(
       detected_object: record.detectedObject,
       ai_insights: record.aiInsights,
       resource_links: resourceLinks,
-      image_url: `/uploads/${record.imagePath}`,
+      image_url: record.imagePath.startsWith('data:') ? record.imagePath : `/uploads/${record.imagePath}`,
       created_at: record.createdAt,
     });
   } catch (error: any) {
@@ -66,11 +66,13 @@ export async function DELETE(
       return NextResponse.json({ detail: 'Detection history item not found' }, { status: 404 });
     }
 
-    // Attempt to delete file from disk
+    // Attempt to delete file from disk if it is not a base64 data URI
     try {
-      const filePath = path.join(process.cwd(), 'public', 'uploads', record.imagePath);
-      if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath);
+      if (!record.imagePath.startsWith('data:')) {
+        const filePath = path.join(process.cwd(), 'public', 'uploads', record.imagePath);
+        if (fs.existsSync(filePath)) {
+          fs.unlinkSync(filePath);
+        }
       }
     } catch (e) {
       console.error('Error removing file:', e);

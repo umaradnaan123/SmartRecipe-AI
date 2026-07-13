@@ -39,16 +39,20 @@ export async function POST(req: NextRequest) {
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
-    // Save file
-    const uploadDir = path.join(process.cwd(), 'public', 'uploads');
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-
     const uniqueFilename = `${crypto.randomUUID()}.${ext}`;
-    const filePath = path.join(uploadDir, uniqueFilename);
-    
-    fs.writeFileSync(filePath, buffer);
+    const filePath = path.join(process.cwd(), 'public', 'uploads', uniqueFilename);
+    let imagePathValue = uniqueFilename;
+    try {
+      // Save file
+      const uploadDir = path.join(process.cwd(), 'public', 'uploads');
+      if (!fs.existsSync(uploadDir)) {
+        fs.mkdirSync(uploadDir, { recursive: true });
+      }
+      fs.writeFileSync(filePath, buffer);
+    } catch (fsErr) {
+      console.warn("Write to public/uploads failed (likely read-only filesystem). Storing as Base64 Data URL instead:", fsErr);
+      imagePathValue = `data:${file.type || 'image/jpeg'};base64,${buffer.toString('base64')}`;
+    }
 
     const language = (data.get('language') as string | null) || 'en';
 
@@ -65,7 +69,7 @@ export async function POST(req: NextRequest) {
     const historyItem = await prisma.detectionHistory.create({
       data: {
         userId: user.id,
-        imagePath: uniqueFilename,
+        imagePath: imagePathValue,
         detectedObject: primaryObjectName,
         aiInsights: result.insights,
       },
@@ -147,7 +151,7 @@ export async function POST(req: NextRequest) {
     }
 
     const resourceLinks = AIService.generateResourceLinks(primaryObjectName);
-    const imageUrl = `/uploads/${uniqueFilename}`;
+    const imageUrl = imagePathValue.startsWith('data:') ? imagePathValue : `/uploads/${imagePathValue}`;
 
     return NextResponse.json({
       id: historyItem.id,
