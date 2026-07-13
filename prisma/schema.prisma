@@ -1,0 +1,84 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id            Int                @id @default(autoincrement())
+  email         String             @unique
+  password      String
+  fullName      String?
+  role          String             @default("user") // "user" | "admin"
+  isActive      Boolean            @default(true)
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+  refreshTokens RefreshToken[]
+  detections    DetectionHistory[]
+}
+
+model RefreshToken {
+  id        Int      @id @default(autoincrement())
+  token     String   @unique
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  revoked   Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model DetectionHistory {
+  id             Int      @id @default(autoincrement())
+  userId         Int
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  imagePath      String
+  detectedObject String
+  aiInsights     String
+  createdAt      DateTime @default(now())
+}
+
+model Recipe {
+  id             Int      @id @default(autoincrement())
+  slug           String   @unique
+  title          String
+  description    String
+  imageUrl       String?
+  cookTime       Int      // in minutes
+  prepTime       Int      // in minutes
+  difficulty     String   // "Easy" | "Medium" | "Hard"
+  cuisine        String
+  ingredients    String   // JSON-serialized array
+  instructions   String   // JSON-serialized array
+  calories       Int
+  protein        Int
+  carbs          Int
+  fat            Int
+  faqs           String   // JSON-serialized FAQ array
+  tips           String   // JSON-serialized tips array
+  createdAt      DateTime @default(now())
+  
+  // Step 6 required attributes
+  servings              Int    @default(4)
+  additionalIngredients String @default("[]") // JSON-serialized array
+  storageInstructions   String @default("")
+  servingSuggestions    String @default("")
+
+  // Detailed dynamic components
+  mealType              String @default("Breakfast")
+  rating                Float  @default(4.8)
+  confidence            Float  @default(99.0)
+  nutritionTable        String @default("{}") // JSON-serialized nutrition map
+}
+
+model BlogArticle {
+  id        Int      @id @default(autoincrement())
+  slug      String   @unique
+  title     String
+  content   String   // Markdown format
+  author    String
+  summary   String
+  createdAt DateTime @default(now())
+}
