@@ -1034,6 +1034,16 @@ Here are some interesting details and recipes/uses for ${matchedNames.join(' and
         }
       `;
 
+      let mimeType = 'image/jpeg';
+      const fileLower = filename.toLowerCase();
+      if (fileLower.endsWith('.png')) {
+        mimeType = 'image/png';
+      } else if (fileLower.endsWith('.webp')) {
+        mimeType = 'image/webp';
+      } else if (fileLower.endsWith('.gif')) {
+        mimeType = 'image/gif';
+      }
+
       const response = await axios.post(
         detectUrl,
         {
@@ -1043,7 +1053,7 @@ Here are some interesting details and recipes/uses for ${matchedNames.join(' and
                 { text: promptText },
                 {
                   inlineData: {
-                    mimeType: 'image/jpeg',
+                    mimeType: mimeType,
                     data: base64Image
                   }
                 }
