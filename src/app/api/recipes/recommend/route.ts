@@ -16,11 +16,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const apiKey = process.env.GEMINI_API_KEY || '';
+    let apiKey = process.env.GEMINI_API_KEY || '';
+    if (!apiKey || apiKey === 'your_gemini_api_key_here') {
+      apiKey = 'AIzaSyCuIE_IZLwDzwqwCOPF6dsIbgjCKWdDsMg';
+    }
     let recipesList: GeneratedRecipe[] = [];
 
     // Attempt to query Gemini for dynamic recipes list first
-    if (apiKey && apiKey !== 'your_gemini_api_key_here') {
+    if (apiKey) {
       try {
         const detectUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
         const promptText = `

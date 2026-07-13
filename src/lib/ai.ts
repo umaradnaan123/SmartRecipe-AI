@@ -944,10 +944,9 @@ Here are some interesting details and recipes/uses for ${matchedNames.join(' and
     filename: string,
     language?: string
   ): Promise<UnifiedDetectionResult> {
-    const apiKey = process.env.GEMINI_API_KEY || '';
-
+    let apiKey = process.env.GEMINI_API_KEY || '';
     if (!apiKey || apiKey === 'your_gemini_api_key_here') {
-      return this.getMockResult(filename);
+      apiKey = 'AIzaSyCuIE_IZLwDzwqwCOPF6dsIbgjCKWdDsMg';
     }
 
     try {
@@ -1083,13 +1082,12 @@ Here are some interesting details and recipes/uses for ${matchedNames.join(' and
   }
 
   public static async generateRecipeFromIngredients(ingredients: string[]): Promise<GeneratedRecipe> {
-    const apiKey = process.env.GEMINI_API_KEY || '';
+    let apiKey = process.env.GEMINI_API_KEY || '';
+    if (!apiKey || apiKey === 'your_gemini_api_key_here') {
+      apiKey = 'AIzaSyCuIE_IZLwDzwqwCOPF6dsIbgjCKWdDsMg';
+    }
     const fallbackRecipes = AIService.getDynamicRecipesForIngredients(ingredients);
     const fallbackRecipe = fallbackRecipes[0] || fallbackRecipes[fallbackRecipes.length - 1];
-
-    if (!apiKey || apiKey === 'your_gemini_api_key_here') {
-      return fallbackRecipe;
-    }
 
     try {
       const detectUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
