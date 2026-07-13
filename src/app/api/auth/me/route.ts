@@ -3,6 +3,8 @@ import bcrypt from 'bcryptjs';
 import prisma from '@/lib/db';
 import { getCurrentUser } from '@/lib/auth';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(req: NextRequest) {
   try {
     const user = await getCurrentUser(req);

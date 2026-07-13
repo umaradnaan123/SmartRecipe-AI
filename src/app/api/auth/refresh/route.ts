@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db';
 import { signAccessToken, signRefreshToken } from '@/lib/jwt';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(req: NextRequest) {
   try {
     const { refresh_token } = await req.json();

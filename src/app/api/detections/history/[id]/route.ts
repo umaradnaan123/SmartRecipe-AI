@@ -5,6 +5,8 @@ import prisma from '@/lib/db';
 import { getCurrentUser } from '@/lib/auth';
 import { AIService } from '@/lib/ai';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> | { id: string } }

@@ -6,6 +6,8 @@ import prisma from '@/lib/db';
 import { getCurrentUser } from '@/lib/auth';
 import { AIService } from '@/lib/ai';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(req: NextRequest) {
   try {
     const user = await getCurrentUser(req);

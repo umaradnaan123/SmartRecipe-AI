@@ -3,6 +3,8 @@ import prisma from '@/lib/db';
 import axios from 'axios';
 import { AIService, GeneratedRecipe } from '@/lib/ai';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(req: NextRequest) {
   try {
     const { ingredients, language } = await req.json();
