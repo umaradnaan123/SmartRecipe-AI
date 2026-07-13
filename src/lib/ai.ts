@@ -1,5 +1,11 @@
 import axios from 'axios';
 
+export const GEMINI_KEYS = [
+  process.env.GEMINI_API_KEY || '',
+  'AIzaSyBbPwKxCOu9__6DdXncCmXEI_r5CSpxMl0',
+  'AIzaSyCuIE_IZLwDzwqwCOPF6dsIbgjCKWdDsMg'
+].filter(key => key && key !== 'your_gemini_api_key_here');
+
 export interface ResourceLink {
   name: string;
   url: string;
@@ -944,223 +950,224 @@ Here are some interesting details and recipes/uses for ${matchedNames.join(' and
     filename: string,
     language?: string
   ): Promise<UnifiedDetectionResult> {
-    let apiKey = process.env.GEMINI_API_KEY || '';
-    if (!apiKey || apiKey === 'your_gemini_api_key_here') {
-      apiKey = 'AIzaSyCuIE_IZLwDzwqwCOPF6dsIbgjCKWdDsMg';
+    const base64Image = imageBuffer.toString('base64');
+    let mimeType = 'image/jpeg';
+    const fileLower = filename.toLowerCase();
+    if (fileLower.endsWith('.png')) {
+      mimeType = 'image/png';
+    } else if (fileLower.endsWith('.webp')) {
+      mimeType = 'image/webp';
+    } else if (fileLower.endsWith('.gif')) {
+      mimeType = 'image/gif';
     }
 
-    try {
-      const base64Image = imageBuffer.toString('base64');
-      const detectUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+    const promptText = `
+      You are an expert food vision AI.
+      Your primary responsibility is to perform high-accuracy object detection and ingredient recognition on the uploaded image.
+      
+      CRITICAL DETAILED INSTRUCTIONS:
+      0. IMPORTANT: Return all text content, including recipe titles, descriptions, instructions, FAQs, tips, storage instructions, and serving suggestions, in the following language: ${language || 'English'}.
+      1. Support extensive recognition across thousands of food categories including: Vegetables, Fruits, Leafy greens, Herbs, Spices, Grains, Cereals, Pulses, Dairy, Meats, Poultry, Seafood, Eggs, Bakery, Snacks, Packaged food, Sauces, Oils, Condiments, and Cooked Dishes.
+      2. Perform multi-object detection: Identify EVERY visible ingredient and item independently.
+      3. Be extremely precise and distinguish carefully between similar-looking ingredients:
+         - Onion vs. Shallot
+         - Garlic vs. Ginger
+         - Coriander vs. Parsley
+         - Cabbage vs. Lettuce
+         - Spinach vs. Mint
+         - Lemon vs. Lime
+         - Tomato vs. Apple
+      4. Detect overlapping, occluded, partially visible, or rotated ingredients.
+      5. Map each detected ingredient to a standard category: "Vegetables", "Fruits", "Herbs", "Spices", "Dairy", "Meat", "Seafood", "Grains", "Pulses", "Snacks", "Bakery", "Beverages", "Condiments", "Packaged Foods", "Kitchen Essentials", or "Cooked Dishes".
+      6. Deduplicate detections to output unique items only. Assign confidence scores (0-100).
+      7. Provide dynamic recipe suggestions based strictly on the combined inventory of detected items.
+      8. Do not invent recipes or guess names if not highly confident. Allow the user to validate.
+      9. Never return recipes that have ingredients not present in the image unless they are listed under "additionalIngredients".
 
-      const promptText = `
-        You are an expert food vision AI.
-        Your primary responsibility is to perform high-accuracy object detection and ingredient recognition on the uploaded image.
-        
-        CRITICAL DETAILED INSTRUCTIONS:
-        0. IMPORTANT: Return all text content, including recipe titles, descriptions, instructions, FAQs, tips, storage instructions, and serving suggestions, in the following language: ${language || 'English'}.
-        1. Support extensive recognition across thousands of food categories including: Vegetables, Fruits, Leafy greens, Herbs, Spices, Grains, Cereals, Pulses, Dairy, Meats, Poultry, Seafood, Eggs, Bakery, Snacks, Packaged food, Sauces, Oils, Condiments, and Cooked Dishes.
-        2. Perform multi-object detection: Identify EVERY visible ingredient and item independently.
-        3. Be extremely precise and distinguish carefully between similar-looking ingredients:
-           - Onion vs. Shallot
-           - Garlic vs. Ginger
-           - Coriander vs. Parsley
-           - Cabbage vs. Lettuce
-           - Spinach vs. Mint
-           - Lemon vs. Lime
-           - Tomato vs. Apple
-        4. Detect overlapping, occluded, partially visible, or rotated ingredients.
-        5. Map each detected ingredient to a standard category: "Vegetables", "Fruits", "Herbs", "Spices", "Dairy", "Meat", "Seafood", "Grains", "Pulses", "Snacks", "Bakery", "Beverages", "Condiments", "Packaged Foods", "Kitchen Essentials", or "Cooked Dishes".
-        6. Deduplicate detections to output unique items only. Assign confidence scores (0-100).
-        7. Provide dynamic recipe suggestions based strictly on the combined inventory of detected items.
-        8. Do not invent recipes or guess names if not highly confident. Allow the user to validate.
-        9. Never return recipes that have ingredients not present in the image unless they are listed under "additionalIngredients".
-
-        Return ONLY a valid JSON object matching the following structure (do not wrap in markdown or backticks):
-        {
-          "detectedItems": [
-            {
-              "name": "Eggs",
-              "confidence": 99,
-              "category": "Protein",
-              "quantity": "Approximately 24 eggs",
-              "freshness": "Fresh",
-              "color": "Brown",
-              "status": "Successfully Detected"
-            }
-          ],
-          "insights": "Markdown format string containing cool facts or details about the detected items",
-          "recipes": [
-            {
-              "title": "Omelette",
-              "description": "Short description of the recipe",
-              "cookTime": 10,
-              "prepTime": 5,
-              "difficulty": "Easy",
-              "cuisine": "French",
-              "ingredients": ["3 eggs", "salt", "butter"],
-              "instructions": ["Whisk eggs in a bowl.", "Melt butter in a pan.", "Pour eggs and cook."],
+      Return ONLY a valid JSON object matching the following structure (do not wrap in markdown or backticks):
+      {
+        "detectedItems": [
+          {
+            "name": "Eggs",
+            "confidence": 99,
+            "category": "Protein",
+            "quantity": "Approximately 24 eggs",
+            "freshness": "Fresh",
+            "color": "Brown",
+            "status": "Successfully Detected"
+          }
+        ],
+        "insights": "Markdown format string containing cool facts or details about the detected items",
+        "recipes": [
+          {
+            "title": "Omelette",
+            "description": "Short description of the recipe",
+            "cookTime": 10,
+            "prepTime": 5,
+            "difficulty": "Easy",
+            "cuisine": "French",
+            "ingredients": ["3 eggs", "salt", "butter"],
+            "instructions": ["Whisk eggs in a bowl.", "Melt butter in a pan.", "Pour eggs and cook."],
+            "calories": 250,
+            "protein": 18,
+            "carbs": 2,
+            "fat": 18,
+            "faqs": [{"q": "Can I add cheese?", "a": "Yes, sprinkle cheese right before folding."}],
+            "tips": ["Cook over low heat for a soft texture."],
+            "servings": 2,
+            "additionalIngredients": ["salt", "butter", "black pepper"],
+            "storageInstructions": "Best enjoyed immediately. Do not store cooked omelettes.",
+            "servingSuggestions": "Serve hot with toast and a fresh side salad.",
+            "mealType": "Breakfast",
+            "rating": 4.9,
+            "confidence": 99.0,
+            "nutritionTable": {
               "calories": 250,
               "protein": 18,
-              "carbs": 2,
+              "carbohydrates": 2,
               "fat": 18,
-              "faqs": [{"q": "Can I add cheese?", "a": "Yes, sprinkle cheese right before folding."}],
-              "tips": ["Cook over low heat for a soft texture."],
-              "servings": 2,
-              "additionalIngredients": ["salt", "butter", "black pepper"],
-              "storageInstructions": "Best enjoyed immediately. Do not store cooked omelettes.",
-              "servingSuggestions": "Serve hot with toast and a fresh side salad.",
-              "mealType": "Breakfast",
-              "rating": 4.9,
-              "confidence": 99.0,
-              "nutritionTable": {
-                "calories": 250,
-                "protein": 18,
-                "carbohydrates": 2,
-                "fat": 18,
-                "fiber": 1.0,
-                "sugar": 0.5,
-                "cholesterol": 375,
-                "sodium": 210,
-                "potassium": 130,
-                "vitaminA": 8,
-                "vitaminC": 0,
-                "calcium": 4,
-                "iron": 6
-              }
+              "fiber": 1.0,
+              "sugar": 0.5,
+              "cholesterol": 375,
+              "sodium": 210,
+              "potassium": 130,
+              "vitaminA": 8,
+              "vitaminC": 0,
+              "calcium": 4,
+              "iron": 6
             }
-          ]
-        }
-      `;
-
-      let mimeType = 'image/jpeg';
-      const fileLower = filename.toLowerCase();
-      if (fileLower.endsWith('.png')) {
-        mimeType = 'image/png';
-      } else if (fileLower.endsWith('.webp')) {
-        mimeType = 'image/webp';
-      } else if (fileLower.endsWith('.gif')) {
-        mimeType = 'image/gif';
+          }
+        ]
       }
+    `;
 
-      const response = await axios.post(
-        detectUrl,
-        {
-          contents: [
-            {
-              parts: [
-                { text: promptText },
-                {
-                  inlineData: {
-                    mimeType: mimeType,
-                    data: base64Image
+    let lastError: any = null;
+    for (const key of GEMINI_KEYS) {
+      try {
+        const detectUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`;
+        const response = await axios.post(
+          detectUrl,
+          {
+            contents: [
+              {
+                parts: [
+                  { text: promptText },
+                  {
+                    inlineData: {
+                      mimeType: mimeType,
+                      data: base64Image
+                    }
                   }
-                }
-              ]
-            }
-          ]
-        },
-        {
-          headers: { 'Content-Type': 'application/json' },
-          timeout: 25000
+                ]
+              }
+            ]
+          },
+          {
+            headers: { 'Content-Type': 'application/json' },
+            timeout: 25000
+          }
+        );
+
+        let text = response.data.candidates[0].content.parts[0].text.trim();
+        if (text.startsWith('```json')) {
+          text = text.substring(7, text.lastIndexOf('```')).trim();
+        } else if (text.startsWith('```')) {
+          text = text.substring(3, text.lastIndexOf('```')).trim();
         }
-      );
 
-      let text = response.data.candidates[0].content.parts[0].text.trim();
-      
-      if (text.startsWith('```json')) {
-        text = text.substring(7, text.lastIndexOf('```')).trim();
-      } else if (text.startsWith('```')) {
-        text = text.substring(3, text.lastIndexOf('```')).trim();
+        return JSON.parse(text) as UnifiedDetectionResult;
+      } catch (error) {
+        lastError = error;
+        console.warn(`Gemini key failed in detectObjectAndInsights, trying next key...`, error);
       }
-
-      return JSON.parse(text) as UnifiedDetectionResult;
-    } catch (error) {
-      console.error('Gemini API call failed, falling back to mock results:', error);
-      return this.getMockResult(filename);
     }
+
+    console.error('All Gemini API keys failed in detectObjectAndInsights, falling back to mock results:', lastError);
+    return this.getMockResult(filename);
   }
 
   public static async generateRecipeFromIngredients(ingredients: string[]): Promise<GeneratedRecipe> {
-    let apiKey = process.env.GEMINI_API_KEY || '';
-    if (!apiKey || apiKey === 'your_gemini_api_key_here') {
-      apiKey = 'AIzaSyCuIE_IZLwDzwqwCOPF6dsIbgjCKWdDsMg';
-    }
     const fallbackRecipes = AIService.getDynamicRecipesForIngredients(ingredients);
     const fallbackRecipe = fallbackRecipes[0] || fallbackRecipes[fallbackRecipes.length - 1];
 
-    try {
-      const detectUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
-      const promptText = `
-        Generate a cooking recipe using some or all of the following ingredients: ${ingredients.join(', ')}.
-        Return ONLY a valid JSON object matching the following structure (do not wrap in markdown or backticks):
-        {
-          "title": "Recipe Title",
-          "description": "Short SEO description",
-          "cookTime": 25,
-          "prepTime": 10,
-          "difficulty": "Easy",
-          "cuisine": "Mexican",
-          "ingredients": ["1 cup ingredient A", "2 tablespoons ingredient B"],
-          "instructions": ["Step 1 description", "Step 2 description"],
+    const promptText = `
+      Generate a cooking recipe using some or all of the following ingredients: ${ingredients.join(', ')}.
+      Return ONLY a valid JSON object matching the following structure (do not wrap in markdown or backticks):
+      {
+        "title": "Recipe Title",
+        "description": "Short SEO description",
+        "cookTime": 25,
+        "prepTime": 10,
+        "difficulty": "Easy",
+        "cuisine": "Mexican",
+        "ingredients": ["1 cup ingredient A", "2 tablespoons ingredient B"],
+        "instructions": ["Step 1 description", "Step 2 description"],
+        "calories": 350,
+        "protein": 15,
+        "carbs": 40,
+        "fat": 12,
+        "faqs": [{"q": "Question 1?", "a": "Answer 1."}],
+        "tips": ["Tip 1", "Tip 2"],
+        "servings": 4,
+        "additionalIngredients": ["olive oil", "salt"],
+        "storageInstructions": "Store in the fridge for up to 2 days.",
+        "servingSuggestions": "Garnish with herbs and serve hot.",
+        "mealType": "Lunch",
+        "rating": 4.8,
+        "confidence": 99.0,
+        "nutritionTable": {
           "calories": 350,
           "protein": 15,
-          "carbs": 40,
+          "carbohydrates": 40,
           "fat": 12,
-          "faqs": [{"q": "Question 1?", "a": "Answer 1."}],
-          "tips": ["Tip 1", "Tip 2"],
-          "servings": 4,
-          "additionalIngredients": ["olive oil", "salt"],
-          "storageInstructions": "Store in the fridge for up to 2 days.",
-          "servingSuggestions": "Garnish with herbs and serve hot.",
-          "mealType": "Lunch",
-          "rating": 4.8,
-          "confidence": 99.0,
-          "nutritionTable": {
-            "calories": 350,
-            "protein": 15,
-            "carbohydrates": 40,
-            "fat": 12,
-            "fiber": 4.5,
-            "sugar": 2.5,
-            "cholesterol": 15,
-            "sodium": 480,
-            "potassium": 320,
-            "vitaminA": 10,
-            "vitaminC": 15,
-            "calcium": 6,
-            "iron": 8
-          }
+          "fiber": 4.5,
+          "sugar": 2.5,
+          "cholesterol": 15,
+          "sodium": 480,
+          "potassium": 320,
+          "vitaminA": 10,
+          "vitaminC": 15,
+          "calcium": 6,
+          "iron": 8
         }
-      `;
-
-      const response = await axios.post(
-        detectUrl,
-        {
-          contents: [
-            {
-              parts: [{ text: promptText }]
-            }
-          ]
-        },
-        {
-          headers: { 'Content-Type': 'application/json' },
-          timeout: 20000
-        }
-      );
-
-      let text = response.data.candidates[0].content.parts[0].text.trim();
-      
-      if (text.startsWith('```json')) {
-        text = text.substring(7, text.lastIndexOf('```')).trim();
-      } else if (text.startsWith('```')) {
-        text = text.substring(3, text.lastIndexOf('```')).trim();
       }
+    `;
 
-      return JSON.parse(text) as GeneratedRecipe;
-    } catch (error) {
-      console.error('Error generating AI recipe, returning fallback:', error);
-      return fallbackRecipe;
+    let lastError: any = null;
+    for (const key of GEMINI_KEYS) {
+      try {
+        const detectUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`;
+        const response = await axios.post(
+          detectUrl,
+          {
+            contents: [
+              {
+                parts: [{ text: promptText }]
+              }
+            ]
+          },
+          {
+            headers: { 'Content-Type': 'application/json' },
+            timeout: 20000
+          }
+        );
+
+        let text = response.data.candidates[0].content.parts[0].text.trim();
+        
+        if (text.startsWith('```json')) {
+          text = text.substring(7, text.lastIndexOf('```')).trim();
+        } else if (text.startsWith('```')) {
+          text = text.substring(3, text.lastIndexOf('```')).trim();
+        }
+
+        return JSON.parse(text) as GeneratedRecipe;
+      } catch (error) {
+        lastError = error;
+        console.warn(`Gemini key failed in generateRecipeFromIngredients, trying next key...`, error);
+      }
     }
+
+    console.error('All Gemini API keys failed in generateRecipeFromIngredients, returning fallback:', lastError);
+    return fallbackRecipe;
   }
 }
