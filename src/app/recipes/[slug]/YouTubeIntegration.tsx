@@ -76,9 +76,12 @@ export default function YouTubeIntegration({ recipeTitle }: Props) {
 
   React.useEffect(() => {
     if (recipeTitle) {
-      setActiveVideoId(null);
+      Promise.resolve().then(() => {
+        setActiveVideoId(null);
+      });
       loadData();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [recipeTitle]);
 
   return (

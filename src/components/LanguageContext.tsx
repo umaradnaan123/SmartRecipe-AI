@@ -136,15 +136,16 @@ interface LanguageContextProps {
 const LanguageContext = createContext<LanguageContextProps | undefined>(undefined);
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  const [currentLang, setCurrentLangState] = useState<LanguageCode>('en');
-  const [isListening, setIsListening] = useState(false);
-
-  useEffect(() => {
-    const saved = localStorage.getItem('app-language') as LanguageCode;
-    if (saved && LANGUAGES.some(l => l.code === saved)) {
-      setCurrentLangState(saved);
+  const [currentLang, setCurrentLangState] = useState<LanguageCode>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('app-language') as LanguageCode;
+      if (saved && LANGUAGES.some(l => l.code === saved)) {
+        return saved;
+      }
     }
-  }, []);
+    return 'en';
+  });
+  const [isListening, setIsListening] = useState(false);
 
   const setLanguage = (lang: LanguageCode) => {
     setCurrentLangState(lang);

@@ -377,7 +377,7 @@ export default async function RecipePage({ params }: PageProps) {
         {tipsList.length > 0 && (
           <div className="bg-gradient-to-r from-zinc-900 to-indigo-950/20 border border-zinc-800 rounded-3xl p-6 shadow-xl space-y-3 hover-glow">
             <h3 className="text-sm font-bold text-white flex items-center gap-2">
-              <Sparkles className="w-4.5 h-4.5 text-indigo-400" /> Chef's Secret Tips
+              <Sparkles className="w-4.5 h-4.5 text-indigo-400" /> Chef&apos;s Secret Tips
             </h3>
             <ul className="list-disc pl-5 space-y-2 text-zinc-300 text-xs leading-relaxed">
               {tipsList.map((tip, idx) => (
