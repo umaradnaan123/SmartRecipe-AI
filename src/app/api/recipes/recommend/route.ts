@@ -66,7 +66,7 @@ export async function POST(req: NextRequest) {
 
     for (const key of GEMINI_KEYS) {
       try {
-        const detectUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`;
+        const detectUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`;
         const response = await axios.post(
           detectUrl,
           {
