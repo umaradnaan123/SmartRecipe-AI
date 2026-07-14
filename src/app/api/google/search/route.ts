@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import axios from 'axios';
 import * as cheerio from 'cheerio';
+import { GEMINI_KEYS } from '@/lib/ai';
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -66,9 +67,51 @@ export async function GET(req: NextRequest) {
     }
     throw new Error('No search results extracted');
   } catch (error) {
-    console.error('Google search scraping failed, returning mock search results:', error);
+    console.error('Google search scraping failed, attempting Gemini AI generation...', error);
 
-    // Dynamic mock search results focusing on trusted cooking resources
+    for (const key of GEMINI_KEYS) {
+      try {
+        const detectUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`;
+        const promptText = `
+          Generate a JSON array of 3 highly relevant and realistic recipe web search results for preparing/cooking: ${query}.
+          For each result, return the following structure:
+          {
+            "title": "Title of the recipe page (e.g. Perfect ${query} Recipe - Allrecipes)",
+            "link": "A valid domain URL path (e.g. https://www.allrecipes.com/recipe/...)",
+            "snippet": "A brief summary of what this recipe page provides",
+            "sourceName": "Name of the site in UPPERCASE (e.g., ALLRECIPES, FOODNETWORK, SERIOUSEATS)",
+            "favicon": "https://www.google.com/s2/favicons?sz=64&domain=allrecipes.com"
+          }
+          Return ONLY a valid JSON array of objects. Do not wrap in markdown or backticks.
+        `;
+
+        const response = await axios.post(
+          detectUrl,
+          {
+            contents: [{ parts: [{ text: promptText }] }]
+          },
+          {
+            headers: { 'Content-Type': 'application/json' },
+            timeout: 10000
+          }
+        );
+
+        let text = response.data.candidates[0].content.parts[0].text.trim();
+        if (text.startsWith('```json')) {
+          text = text.substring(7, text.lastIndexOf('```')).trim();
+        } else if (text.startsWith('```')) {
+          text = text.substring(3, text.lastIndexOf('```')).trim();
+        }
+        const geminiResults = JSON.parse(text);
+        if (Array.isArray(geminiResults) && geminiResults.length > 0) {
+          return NextResponse.json(geminiResults);
+        }
+      } catch (geminiErr) {
+        console.warn(`Gemini search generation failed with key... trying next key if available`, geminiErr);
+      }
+    }
+
+    // Static mock fallback if Gemini also offline
     const mockQuery = query;
     return NextResponse.json([
       {
