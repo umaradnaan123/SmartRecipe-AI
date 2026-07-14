@@ -208,6 +208,13 @@ export default function HomePage() {
 
   const handleAnalyze = async () => {
     if (!selectedFile) return;
+    const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
+    if (!token) {
+      addToast('Please login first to analyze images.', 'error');
+      router.push('/login');
+      return;
+    }
+
     setIsProcessing(true);
     const formData = new FormData();
     formData.append('file', selectedFile);
@@ -241,7 +248,9 @@ export default function HomePage() {
       }
       fetchHistory();
     } catch (err: any) {
-      addToast('Vision analysis failed.', 'error');
+      console.error(err);
+      const detail = err.response?.data?.detail || 'Vision analysis failed.';
+      addToast(detail, 'error');
     } finally {
       setIsProcessing(false);
     }
@@ -263,6 +272,13 @@ export default function HomePage() {
   };
 
   const handleGetRecommendations = async () => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
+    if (!token) {
+      addToast('Please login first to generate recipes.', 'error');
+      router.push('/login');
+      return;
+    }
+
     if (ingredients.length === 0) {
       addToast('Please add at least one ingredient.', 'error');
       return;
@@ -278,8 +294,10 @@ export default function HomePage() {
         setRecipes([res.data]);
         addToast(`Generated Recipe: ${res.data.title}!`, 'success');
       }
-    } catch (err) {
-      addToast('Failed to recommend recipes.', 'error');
+    } catch (err: any) {
+      console.error(err);
+      const detail = err.response?.data?.detail || 'Failed to recommend recipes.';
+      addToast(detail, 'error');
     } finally {
       setIsRecommending(false);
     }
